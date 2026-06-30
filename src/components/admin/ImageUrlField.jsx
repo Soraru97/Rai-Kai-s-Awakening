@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const DEFAULT_POSITION = { x: 50, y: 50 }
+const DRAG_THRESHOLD = 3 // pixels of movement before a click counts as a drag
 
 /**
  * Image input by URL instead of file upload, with drag-to-reposition support.
@@ -44,10 +45,22 @@ export function ImageUrlField({ imageUrl, position, onChange, onPositionChange }
   function handlePointerDown(e) {
     if (!isPositioning) return
     e.preventDefault()
-    updatePositionFromEvent(e.clientX, e.clientY)
+
+    const startX = e.clientX
+    const startY = e.clientY
+    let hasDragged = false
 
     function handlePointerMove(moveEvent) {
-      updatePositionFromEvent(moveEvent.clientX, moveEvent.clientY)
+      const dx = Math.abs(moveEvent.clientX - startX)
+      const dy = Math.abs(moveEvent.clientY - startY)
+      // Only start moving the image once the pointer has actually moved —
+      // a plain click/tap shouldn't reposition anything.
+      if (!hasDragged && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
+        hasDragged = true
+      }
+      if (hasDragged) {
+        updatePositionFromEvent(moveEvent.clientX, moveEvent.clientY)
+      }
     }
     function handlePointerUp() {
       window.removeEventListener('pointermove', handlePointerMove)
@@ -87,12 +100,14 @@ export function ImageUrlField({ imageUrl, position, onChange, onPositionChange }
           </div>
         )}
 
-        {/* Reposition toggle button */}
+        {/* Reposition toggle button — isolated from the drag frame via
+            pointerdown stopPropagation so clicking it never moves the image */}
         {localUrl && !error && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setIsPositioning(v => !v) }}
-            className={`absolute top-1.5 right-1.5 z-10 p-1.5 rounded-lg backdrop-blur-sm transition-colors ${
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`absolute top-1.5 left-1.5 z-10 p-1.5 rounded-lg backdrop-blur-sm transition-colors ${
               isPositioning
                 ? 'bg-accent text-white'
                 : 'bg-surface-2/80 text-text-muted hover:text-text-primary'
@@ -118,7 +133,7 @@ export function ImageUrlField({ imageUrl, position, onChange, onPositionChange }
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute bottom-1.5 left-1.5 right-1.5 px-2 py-1 rounded-md bg-surface-2/90 backdrop-blur-sm text-center"
+              className="absolute bottom-1.5 left-1.5 right-1.5 px-2 py-1 rounded-md bg-surface-2/90 backdrop-blur-sm text-center pointer-events-none"
             >
               <p className="text-[10px] text-text-secondary">Перетащите для позиционирования</p>
             </motion.div>
