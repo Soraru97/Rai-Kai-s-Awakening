@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    function isValidVote(data) {
+      return data.keys().hasAll(['browserId', 'ipHash', 'country', 'stages', 'createdAt'])
+        && data.browserId is string
+        && data.stages is map;
+    }
+
+    // Public settings - readable by everyone, writable only by admins
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Polls - readable by everyone, writable only by admins
+    match /polls/{pollId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+
+      // Stages - readable by everyone, writable only by admins
+      match /stages/{stageId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      // Votes - create-only for public (no read of others' votes),
+      // full access for admins
+      match /votes/{voteId} {
+        allow read: if isAdmin();
+        allow create: if isValidVote(request.resource.data);
+        allow update, delete: if isAdmin();
+      }
+
+      // Results - readable by everyone (for live results display).
+      // Admins get full write access. Public (anonymous) clients may only
+      // update vote counters via the transaction in submitVote() — and only
+      // those specific fields, nothing else.
+      match /results/{stageId} {
+        allow read: if true;
+        allow create, delete: if isAdmin();
+        allow update: if isAdmin()
+          || request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['totalVotes', 'cards', 'updatedAt']);
+      }
+    }
+  }
+}
