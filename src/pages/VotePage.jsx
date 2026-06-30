@@ -94,11 +94,16 @@ export default function VotePage() {
       await submitVote(poll.id, allVotes, geoData || {})
       navigate('/thank-you')
     } catch (err) {
+      console.error('=== submitVote ERROR ===')
+      console.error('message:', err.message)
+      console.error('code:', err.code)
+      console.error('full error:', err)
+
       if (err.message === 'ALREADY_VOTED') {
         toast.error('Вы уже проголосовали')
         navigate('/')
       } else {
-        toast.error('Ошибка сохранения. Попробуйте ещё раз.')
+        toast.error(`Ошибка: ${err.code || err.message || 'неизвестная'}`)
       }
     } finally {
       setSubmitting(false)

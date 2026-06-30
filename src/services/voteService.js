@@ -57,34 +57,40 @@ export async function submitVote(pollId, stageVotes, geoData = {}) {
   const browserId = getBrowserId()
   const ipHash = await hashString(browserId + 'salt_v1')
 
-  // Check for an existing vote from this browser before starting the transaction.
-  // This is a best-effort check (not airtight against race conditions), but
-  // Firestore transactions can only read documents by direct reference via
-  // transaction.get(), not arbitrary queries — so a query-based duplicate
-  // check cannot live inside the transaction itself.
+  console.log('[submitVote] pollId:', pollId)
+  console.log('[submitVote] stageVotes:', stageVotes)
+  console.log('[submitVote] stageIds:', Object.keys(stageVotes))
+
   const votesRef = collection(db, COLLECTIONS.POLLS, pollId, COLLECTIONS.VOTES)
   const dupQuery = query(votesRef, where('browserId', '==', fingerprint))
+
+  console.log('[submitVote] checking for duplicate vote...')
   const dupSnap = await getDocs(dupQuery)
 
   if (!dupSnap.empty) {
+    console.log('[submitVote] ALREADY_VOTED')
     throw new Error('ALREADY_VOTED')
   }
 
   const stageIds = Object.keys(stageVotes)
   const voteRef = doc(votesRef)
 
-  // Run in a transaction to ensure the vote document and all results
-  // counters are updated atomically together.
+  console.log('[submitVote] starting transaction, stages:', stageIds)
+
   await runTransaction(db, async (transaction) => {
-    // ── All reads must happen first ──────────────────────────────────────
     const resultsRefs = stageIds.map(stageId =>
       doc(db, COLLECTIONS.POLLS, pollId, COLLECTIONS.RESULTS, stageId)
     )
+    console.log('[submitVote] reading results refs:', resultsRefs.map(r => r.path))
+
     const resultsSnaps = await Promise.all(
       resultsRefs.map(ref => transaction.get(ref))
     )
 
-    // ── Then all writes ───────────────────────────────────────────────────
+    resultsSnaps.forEach((snap, i) => {
+      console.log(`[submitVote] results[${stageIds[i]}] exists:`, snap.exists())
+    })
+
     transaction.set(voteRef, {
       browserId: fingerprint,
       ipHash,
@@ -102,11 +108,15 @@ export async function submitVote(pollId, stageVotes, geoData = {}) {
         for (const cardId of stageVotes[stageId]) {
           updates[`cards.${cardId}.votes`] = increment(1)
         }
+        console.log(`[submitVote] updating results for stage ${stageId}:`, updates)
         transaction.update(resultsRefs[i], updates)
+      } else {
+        console.warn(`[submitVote] results doc for stage ${stageId} does NOT exist — votes won't be counted for this stage`)
       }
     })
   })
 
+  console.log('[submitVote] transaction complete, marking as voted')
   markPollAsVoted(pollId)
 }
 
