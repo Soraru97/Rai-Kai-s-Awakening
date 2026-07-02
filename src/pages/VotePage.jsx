@@ -13,15 +13,9 @@ import { PageLoader } from '@/components/ui/Loader'
 import toast from 'react-hot-toast'
 
 const slideVariants = {
-  enter: (direction) => ({
-    x: direction > 0 ? 60 : -60,
-    opacity: 0,
-  }),
+  enter: (direction) => ({ x: direction > 0 ? 60 : -60, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction) => ({
-    x: direction > 0 ? -60 : 60,
-    opacity: 0,
-  }),
+  exit: (direction) => ({ x: direction > 0 ? -60 : 60, opacity: 0 }),
 }
 
 export default function VotePage() {
@@ -37,44 +31,23 @@ export default function VotePage() {
   const [direction, setDirection] = useState(1)
 
   const {
-    selected, isSelected, isDisabled, selectedCount, canSubmit,
+    isSelected, isDisabled, selectedCount, canSubmit,
     toggleCard, reset, getSelectedArray,
   } = useVoting(currentStage?.maxChoices ?? 1)
 
-  // Guard: redirect if no poll or stage data
   useEffect(() => {
-    if (!poll || !stages.length) {
-      navigate('/')
-      return
-    }
-
-    // Check if already voted
-    hasVoted(poll.id).then((voted) => {
-      if (voted) navigate('/')
-    })
-
+    if (!poll || !stages.length) { navigate('/'); return }
+    hasVoted(poll.id).then((voted) => { if (voted) navigate('/') })
     const status = getPollStatus(poll.startDate, poll.endDate, poll.isActive)
     if (status !== 'active') navigate('/')
-
-    // Prefetch geo data
-    if (!geoData) {
-      getGeoData().then(setGeoData)
-    }
+    if (!geoData) getGeoData().then(setGeoData)
   }, [poll, stages])
 
-  // Reset selection when stage changes
-  useEffect(() => {
-    reset()
-  }, [currentStageIndex])
+  useEffect(() => { reset() }, [currentStageIndex])
 
   async function handleNextStage() {
-    if (!canSubmit) {
-      toast.error('Выберите хотя бы один вариант')
-      return
-    }
-
+    if (!canSubmit) { toast.error('Please select at least one option'); return }
     saveStageVote(currentStage.id, getSelectedArray())
-
     if (isLastStage) {
       await handleSubmitAll()
     } else {
@@ -86,11 +59,7 @@ export default function VotePage() {
   async function handleSubmitAll() {
     setSubmitting(true)
     try {
-      const allVotes = {
-        ...stageVotes,
-        [currentStage.id]: getSelectedArray(),
-      }
-
+      const allVotes = { ...stageVotes, [currentStage.id]: getSelectedArray() }
       await submitVote(poll.id, allVotes, geoData || {})
       navigate('/thank-you')
     } catch (err) {
@@ -98,12 +67,11 @@ export default function VotePage() {
       console.error('message:', err.message)
       console.error('code:', err.code)
       console.error('full error:', err)
-
       if (err.message === 'ALREADY_VOTED') {
-        toast.error('Вы уже проголосовали')
+        toast.error('You have already voted')
         navigate('/')
       } else {
-        toast.error(`Ошибка: ${err.code || err.message || 'неизвестная'}`)
+        toast.error(`Error: ${err.code || err.message || 'unknown'}`)
       }
     } finally {
       setSubmitting(false)
@@ -115,7 +83,6 @@ export default function VotePage() {
   return (
     <div className="flex-1 px-4 sm:px-6 py-8">
       <div className="max-w-7xl mx-auto">
-        {/* Stage header */}
         <StageHeader
           stage={currentStage}
           currentIndex={currentStageIndex}
@@ -123,7 +90,6 @@ export default function VotePage() {
           selectedCount={selectedCount}
         />
 
-        {/* Cards */}
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStage.id}
@@ -143,7 +109,6 @@ export default function VotePage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Bottom action bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -153,23 +118,17 @@ export default function VotePage() {
           <div className="text-sm text-text-muted">
             {currentStageIndex + 1} / {totalStages}
           </div>
-
-          <Button
-            size="lg"
-            onClick={handleNextStage}
-            loading={submitting}
-            disabled={!canSubmit}
-          >
+          <Button size="lg" onClick={handleNextStage} loading={submitting} disabled={!canSubmit}>
             {isLastStage ? (
               <>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Завершить голосование
+                Submit Vote
               </>
             ) : (
               <>
-                Следующий этап
+                Next Stage
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>

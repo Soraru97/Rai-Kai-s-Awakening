@@ -8,20 +8,20 @@ import * as XLSX from 'xlsx'
 export function exportToCSV(resultsData, pollTitle) {
   const rows = []
 
-  rows.push(['Голосование', pollTitle])
-  rows.push(['Экспорт', new Date().toLocaleString('ru-RU')])
+  rows.push(['Poll', pollTitle])
+  rows.push(['Exported', new Date().toLocaleString('en-GB')])
   rows.push([])
 
   for (const stage of resultsData) {
-    rows.push([`Этап: ${stage.title}`])
-    rows.push(['Карточка', 'Голосов', 'Процент', 'Место'])
+    rows.push([`Stage: ${stage.title}`])
+    rows.push(['Card', 'Votes', 'Percentage', 'Rank'])
 
     const sorted = [...stage.cards].sort((a, b) => b.votes - a.votes)
     sorted.forEach((card, idx) => {
       rows.push([card.title, card.votes, `${card.percentage}%`, idx + 1])
     })
 
-    rows.push(['Итого голосов', stage.totalVotes])
+    rows.push(['Total votes', stage.totalVotes])
     rows.push([])
   }
 
@@ -46,12 +46,12 @@ export function exportToExcel(resultsData, votesData, pollTitle) {
   // Sheet 1: Summary results per stage
   for (const stage of resultsData) {
     const sheetData = [
-      ['Карточка', 'Голосов', 'Процент', 'Место'],
+      ['Card', 'Votes', 'Percentage', 'Rank'],
       ...([...stage.cards]
         .sort((a, b) => b.votes - a.votes)
         .map((card, idx) => [card.title, card.votes, `${card.percentage}%`, idx + 1])),
       [],
-      ['Итого', stage.totalVotes],
+      ['Total', stage.totalVotes],
     ]
     const ws = XLSX.utils.aoa_to_sheet(sheetData)
     ws['!cols'] = [{ wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 8 }]
@@ -60,13 +60,13 @@ export function exportToExcel(resultsData, votesData, pollTitle) {
 
   // Sheet 2: Raw votes
   if (votesData?.length) {
-    const headers = ['Дата', 'Страна', 'Город', 'Регион', 'ID браузера (хэш)']
+    const headers = ['Date', 'Country', 'City', 'Region', 'Browser ID (hash)']
     const stageIds = Object.keys(votesData[0]?.stages || {})
-    headers.push(...stageIds.map(id => `Этап ${id}`))
+    headers.push(...stageIds.map(id => `Stage ${id}`))
 
     const rows = votesData.map(vote => {
       const row = [
-        vote.createdAt ? new Date(vote.createdAt.seconds * 1000).toLocaleString('ru-RU') : '',
+        vote.createdAt ? new Date(vote.createdAt.seconds * 1000).toLocaleString('en-GB') : '',
         vote.country || '',
         vote.city || '',
         vote.region || '',
@@ -80,7 +80,7 @@ export function exportToExcel(resultsData, votesData, pollTitle) {
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
     ws['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, ...stageIds.map(() => ({ wch: 25 }))]
-    XLSX.utils.book_append_sheet(wb, ws, 'Детали голосов')
+    XLSX.utils.book_append_sheet(wb, ws, 'Vote Details')
   }
 
   XLSX.writeFile(wb, `votebox-${slugify(pollTitle)}-results.xlsx`)

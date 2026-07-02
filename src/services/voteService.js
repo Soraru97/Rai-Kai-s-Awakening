@@ -12,6 +12,7 @@ import {
   orderBy,
   runTransaction,
   increment,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/firebase/app'
 import { COLLECTIONS } from '@/firebase/collections'
@@ -223,4 +224,34 @@ export async function getVoteStats(pollId) {
     timeline,
     votes,
   }
+}
+
+/**
+ * Clear all votes for a poll without deleting the poll itself.
+ * Resets vote documents and zeroes out all result counters.
+ * @param {string} pollId
+ */
+export async function clearPollVotes(pollId) {
+  // Delete all vote documents
+  const votesRef = collection(db, COLLECTIONS.POLLS, pollId, COLLECTIONS.VOTES)
+  const votesSnap = await getDocs(votesRef)
+
+  const batch = writeBatch(db)
+  votesSnap.docs.forEach(d => batch.delete(d.ref))
+  await batch.commit()
+
+  // Reset all results counters to zero
+  const resultsRef = collection(db, COLLECTIONS.POLLS, pollId, COLLECTIONS.RESULTS)
+  const resultsSnap = await getDocs(resultsRef)
+
+  const batch2 = writeBatch(db)
+  resultsSnap.docs.forEach(d => {
+    const data = d.data()
+    const resetCards = {}
+    Object.entries(data.cards || {}).forEach(([cardId, card]) => {
+      resetCards[cardId] = { ...card, votes: 0 }
+    })
+    batch2.update(d.ref, { totalVotes: 0, cards: resetCards, updatedAt: serverTimestamp() })
+  })
+  await batch2.commit()
 }

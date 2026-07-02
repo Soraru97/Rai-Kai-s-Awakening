@@ -44,10 +44,10 @@ export default function HomePage() {
         >
           <div className="text-6xl mb-6">🗳️</div>
           <h1 className="text-3xl font-bold text-text-primary mb-3">
-            Голосований пока нет
+            No polls yet
           </h1>
           <p className="text-text-secondary">
-            Ни одного активного голосования не найдено. Загляните позже!
+            No active polls found. Check back later!
           </p>
         </motion.div>
       </div>
@@ -94,7 +94,6 @@ export default function HomePage() {
           transition={{ delay: 0.2 }}
           className="glass-panel p-6 mb-8"
         >
-          {/* Status badge above the info */}
           <div className="flex justify-center mb-5">
             <StatusBadge status={status} />
           </div>
@@ -103,15 +102,15 @@ export default function HomePage() {
             <div>
               <p className="text-3xl font-bold text-gradient">{stages.length}</p>
               <p className="text-sm text-text-secondary mt-1">
-                {stages.length === 1 ? 'этап' : stages.length < 5 ? 'этапа' : 'этапов'}
+                {stages.length === 1 ? 'stage' : 'stages'}
               </p>
             </div>
             <div>
-              <p className="text-sm text-text-secondary mb-1">Начало</p>
+              <p className="text-sm text-text-secondary mb-1">Starts</p>
               <p className="font-semibold text-text-primary">{formatDate(poll.startDate)}</p>
             </div>
             <div>
-              <p className="text-sm text-text-secondary mb-1">Конец</p>
+              <p className="text-sm text-text-secondary mb-1">Ends</p>
               <p className="font-semibold text-text-primary">{formatDate(poll.endDate)}</p>
             </div>
           </div>
@@ -124,59 +123,55 @@ export default function HomePage() {
           transition={{ delay: 0.3 }}
           className="text-center space-y-4"
         >
-          {/* Upcoming — show countdown, no results link */}
           {status === 'upcoming' && (
             <div className="space-y-6">
               <CountdownTimer targetDate={poll.startDate} />
               <p className="text-text-secondary text-sm">
-                Голосование начнётся {formatDate(poll.startDate, 'dd MMMM в HH:mm')}
+                Voting starts on {formatDate(poll.startDate, 'MMMM dd \'at\' HH:mm')}
               </p>
             </div>
           )}
 
-          {/* Active + not voted yet — only the vote button */}
           {status === 'active' && !voted && !checkingVote && (
             <Button size="xl" onClick={() => navigate('/vote')} className="w-full sm:w-auto">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Начать голосование
+              Start Voting
             </Button>
           )}
 
-          {/* Active + already voted — confirmation + results button */}
           {status === 'active' && voted && !checkingVote && (
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-success/15 border border-success/30 text-success font-semibold">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Вы уже проголосовали
+                You've already voted
               </div>
               <div>
                 <Button variant="secondary" onClick={() => navigate('/results')}>
-                  Посмотреть результаты
+                  View Results
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Ended — lock message + results button */}
           {status === 'ended' && (
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-surface-3 border border-border text-text-secondary font-semibold">
-                🔒 Голосование завершено
+                🔒 Voting has ended
               </div>
               <div>
                 <Button variant="secondary" onClick={() => navigate('/results')}>
-                  Посмотреть результаты
+                  View Results
                 </Button>
               </div>
             </div>
           )}
 
           {checkingVote && (
-            <div className="text-text-muted text-sm">Проверка статуса...</div>
+            <div className="text-text-muted text-sm">Checking status...</div>
           )}
         </motion.div>
 

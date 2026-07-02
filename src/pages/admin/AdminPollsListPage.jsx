@@ -19,16 +19,11 @@ export default function AdminPollsListPage() {
   const [deleting, setDeleting] = useState(false)
   const [settingActive, setSettingActive] = useState(null)
 
-  useEffect(() => {
-    loadData()
-  }, [])
+  useEffect(() => { loadData() }, [])
 
   async function loadData() {
     setLoading(true)
-    const [pollsData, settings] = await Promise.all([
-      getAllPolls(),
-      getGlobalSettings(),
-    ])
+    const [pollsData, settings] = await Promise.all([getAllPolls(), getGlobalSettings()])
     setPolls(pollsData)
     setActivePollId(settings.activePollId || null)
     setLoading(false)
@@ -39,12 +34,8 @@ export default function AdminPollsListPage() {
     try {
       await updateGlobalSettings({ activePollId: pollId })
       setActivePollId(pollId)
-      toast.success('Голосование сделано активным на главной странице')
-    } catch {
-      toast.error('Ошибка обновления')
-    } finally {
-      setSettingActive(null)
-    }
+      toast.success('Poll set as active on the main page')
+    } catch { toast.error('Update error') } finally { setSettingActive(null) }
   }
 
   async function handleDelete() {
@@ -52,52 +43,34 @@ export default function AdminPollsListPage() {
     setDeleting(true)
     try {
       await deletePoll(deleteTarget.id)
-      toast.success('Голосование удалено')
+      toast.success('Poll deleted')
       setPolls(prev => prev.filter(p => p.id !== deleteTarget.id))
       setDeleteTarget(null)
-    } catch {
-      toast.error('Ошибка удаления')
-    } finally {
-      setDeleting(false)
-    }
+    } catch { toast.error('Delete error') } finally { setDeleting(false) }
   }
 
   return (
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Голосования</h1>
-          <p className="text-text-secondary text-sm mt-1">Управление всеми голосованиями</p>
+          <h1 className="text-2xl font-bold text-text-primary">Polls</h1>
+          <p className="text-text-secondary text-sm mt-1">Manage all polls</p>
         </div>
-        <Button onClick={() => navigate('/admin/polls/new')}>
-          + Создать голосование
-        </Button>
+        <Button onClick={() => navigate('/admin/polls/new')}>+ Create Poll</Button>
       </div>
 
-      {loading ? (
-        <InlineLoader />
-      ) : polls.length === 0 ? (
-        <EmptyState
-          icon="🗳️"
-          title="Голосований ещё нет"
-          description="Создайте первое голосование, чтобы начать сбор голосов от пользователей"
-          action={
-            <Button onClick={() => navigate('/admin/polls/new')}>
-              Создать голосование
-            </Button>
-          }
+      {loading ? <InlineLoader /> : polls.length === 0 ? (
+        <EmptyState icon="🗳️" title="No polls yet"
+          description="Create your first poll to start collecting votes"
+          action={<Button onClick={() => navigate('/admin/polls/new')}>Create poll</Button>}
         />
       ) : (
         <div className="grid gap-4">
           {polls.map((poll, i) => {
             const status = getPollStatus(poll.startDate, poll.endDate, poll.isActive)
             const isCurrentActive = activePollId === poll.id
-
             return (
-              <motion.div
-                key={poll.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+              <motion.div key={poll.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 className={`glass-panel p-5 ${isCurrentActive ? 'ring-1 ring-accent/40' : ''}`}
               >
@@ -105,46 +78,28 @@ export default function AdminPollsListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <StatusBadge status={status} />
-                      {isCurrentActive && (
-                        <span className="badge badge-accent">На главной</span>
-                      )}
+                      {isCurrentActive && <span className="badge badge-accent">Active on main</span>}
                     </div>
-                    <h3 className="text-lg font-semibold text-text-primary mb-1">
-                      {poll.title}
-                    </h3>
+                    <h3 className="text-lg font-semibold text-text-primary mb-1">{poll.title}</h3>
                     {poll.description && (
-                      <p className="text-sm text-text-secondary line-clamp-1 mb-2">
-                        {poll.description}
-                      </p>
+                      <p className="text-sm text-text-secondary line-clamp-1 mb-2">{poll.description}</p>
                     )}
                     <p className="text-xs text-text-muted">
                       {formatDate(poll.startDate)} — {formatDate(poll.endDate)}
                     </p>
                   </div>
-
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {!isCurrentActive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSetActive(poll.id)}
-                        loading={settingActive === poll.id}
-                      >
-                        Сделать активным
+                      <Button variant="ghost" size="sm" onClick={() => handleSetActive(poll.id)}
+                        loading={settingActive === poll.id}>
+                        Set active
                       </Button>
                     )}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => navigate(`/admin/polls/${poll.id}`)}
-                    >
-                      Редактировать
+                    <Button variant="secondary" size="sm" onClick={() => navigate(`/admin/polls/${poll.id}`)}>
+                      Edit
                     </Button>
-                    <button
-                      onClick={() => setDeleteTarget(poll)}
-                      className="p-2.5 rounded-xl text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      aria-label="Удалить"
-                    >
+                    <button onClick={() => setDeleteTarget(poll)}
+                      className="p-2.5 rounded-xl text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -157,24 +112,14 @@ export default function AdminPollsListPage() {
         </div>
       )}
 
-      {/* Delete confirmation modal */}
-      <Modal
-        isOpen={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        title="Удалить голосование?"
-        size="sm"
-      >
+      <Modal isOpen={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete poll?" size="sm">
         <p className="text-text-secondary mb-6">
-          Вы уверены, что хотите удалить «{deleteTarget?.title}»? Это действие необратимо
-          и удалит все этапы, голоса и результаты.
+          Are you sure you want to delete «{deleteTarget?.title}»? This action is irreversible
+          and will delete all stages, votes and results.
         </p>
         <div className="flex gap-3 justify-end">
-          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
-            Отмена
-          </Button>
-          <Button variant="danger" onClick={handleDelete} loading={deleting}>
-            Удалить
-          </Button>
+          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+          <Button variant="danger" onClick={handleDelete} loading={deleting}>Delete</Button>
         </div>
       </Modal>
     </div>

@@ -41,7 +41,7 @@ export function Button({
       {loading ? (
         <>
           <Spinner size="sm" />
-          <span>Загрузка...</span>
+          <span>Loading...</span>
         </>
       ) : (
         <>

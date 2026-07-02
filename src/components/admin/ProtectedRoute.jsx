@@ -4,12 +4,7 @@ import { PageLoader } from '@/components/ui/Loader'
 
 export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-
   if (loading) return <PageLoader />
-
-  if (!user) {
-    return <Navigate to="/admin/login" replace />
-  }
-
+  if (!user) return <Navigate to="/admin/login" replace />
   return children
 }

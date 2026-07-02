@@ -22,7 +22,6 @@ function ResultCard({ card, rank, total, showVotes = true, enableZoom = true }) 
       transition={{ delay: rank * 0.03 }}
       className="flex items-center gap-4"
     >
-      {/* Rank */}
       <div
         className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
         style={{
@@ -33,9 +32,8 @@ function ResultCard({ card, rank, total, showVotes = true, enableZoom = true }) 
         {rank + 1}
       </div>
 
-      {/* Image with optional hover zoom */}
       {card.imageUrl && (
-        <div className={`w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative group border border-border ${enableZoom ? 'cursor-zoom-in' : ''}`}>
+        <div className={`w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative border border-border ${enableZoom ? 'cursor-zoom-in' : ''}`}>
           <motion.img
             src={card.imageUrl}
             alt={card.title}
@@ -52,7 +50,6 @@ function ResultCard({ card, rank, total, showVotes = true, enableZoom = true }) 
         </div>
       )}
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-text-primary truncate mb-1.5">
           {card.title}
@@ -60,11 +57,10 @@ function ResultCard({ card, rank, total, showVotes = true, enableZoom = true }) 
         <ResultBar votes={card.votes} total={total} />
       </div>
 
-      {/* Votes */}
       {showVotes && (
         <div className="text-right flex-shrink-0">
           <p className="text-sm font-bold text-text-primary">{formatNumber(card.votes)}</p>
-          <p className="text-xs text-text-muted">голосов</p>
+          <p className="text-xs text-text-muted">votes</p>
         </div>
       )}
     </motion.div>
@@ -84,17 +80,17 @@ function StageResults({ stage, index, enableZoom }) {
           <h3 className="text-lg font-bold text-text-primary">{stage.title}</h3>
           {stage.showVoteCounts && (
             <p className="text-sm text-text-muted mt-0.5">
-              {formatNumber(stage.totalVotes)} {stage.totalVotes === 1 ? 'голос' : 'голосов'}
+              {formatNumber(stage.totalVotes)} {stage.totalVotes === 1 ? 'vote' : 'votes'}
             </p>
           )}
         </div>
         <div className="badge badge-accent flex-shrink-0">
-          Этап {index + 1}
+          Stage {index + 1}
         </div>
       </div>
 
       {stage.cards.length === 0 ? (
-        <p className="text-text-muted text-sm text-center py-4">Нет данных</p>
+        <p className="text-text-muted text-sm text-center py-4">No data yet</p>
       ) : (
         <div className="space-y-4">
           {stage.cards.map((card, i) => (
@@ -116,55 +112,41 @@ function StageResults({ stage, index, enableZoom }) {
 export default function ResultsPage() {
   const navigate = useNavigate()
   const { poll: contextPoll } = usePoll()
-  // Fall back to a direct fetch in case this page was opened directly
-  // (e.g. page refresh) without going through the home page first.
   const { poll: fetchedPoll } = usePollData()
   const poll = contextPoll || fetchedPoll
   const { results, loading } = useResults(poll?.id)
-
   const totalVoters = results[0]?.totalVotes ?? 0
 
   return (
     <div className="flex-1 px-4 sm:px-6 py-12">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-10"
-        >
-          <button
-            onClick={() => navigate('/')}
-            className="btn-ghost mb-6 text-text-muted"
-          >
-            ← Назад
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+          <button onClick={() => navigate('/')} className="btn-ghost mb-6 text-text-muted">
+            ← Back
           </button>
-
           <h1 className="text-3xl sm:text-4xl font-black text-text-primary mb-2">
-            Результаты голосования
+            Poll Results
           </h1>
           {poll?.title && (
             <p className="text-text-secondary text-lg">{poll.title}</p>
           )}
-
           {totalVoters > 0 && results[0]?.showVoteCounts && (
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-surface-2 border border-border rounded-xl">
               <span className="text-2xl font-bold text-gradient">{formatNumber(totalVoters)}</span>
               <span className="text-text-secondary text-sm">
-                {totalVoters === 1 ? 'участник' : 'участников'}
+                {totalVoters === 1 ? 'participant' : 'participants'}
               </span>
             </div>
           )}
         </motion.div>
 
-        {/* Results */}
         {loading ? (
-          <InlineLoader text="Загрузка результатов..." />
+          <InlineLoader text="Loading results..." />
         ) : results.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">📊</div>
-            <p className="text-text-secondary">Результатов пока нет</p>
-            <p className="text-text-muted text-sm mt-1">Голоса появятся здесь в реальном времени</p>
+            <p className="text-text-secondary">No results yet</p>
+            <p className="text-text-muted text-sm mt-1">Votes will appear here in real time</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -179,7 +161,6 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Footer actions */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -187,7 +168,7 @@ export default function ResultsPage() {
           className="mt-10 flex justify-center"
         >
           <Button variant="secondary" onClick={() => navigate('/')}>
-            На главную
+            Back to Home
           </Button>
         </motion.div>
       </div>

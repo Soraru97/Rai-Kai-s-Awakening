@@ -19,7 +19,7 @@ export function VoteGrid({ cards, isSelected, isDisabled, onToggle }) {
   if (!cards?.length) {
     return (
       <div className="text-center py-12 text-text-muted">
-        Карточки не найдены
+        No cards found
       </div>
     )
   }
